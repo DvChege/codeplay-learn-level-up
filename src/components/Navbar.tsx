@@ -1,9 +1,22 @@
 import { Button } from "@/components/ui/button";
-import { Code, Menu, X, Trophy, User, BookOpen } from "lucide-react";
+import { Code, Menu, X, Trophy, User, BookOpen, LogOut } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { AuthDialog } from "./AuthDialog";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const { user, signOut } = useAuth();
 
   return (
     <header className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-md border-b border-border/50">
@@ -32,13 +45,47 @@ const Navbar = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
-          <Button variant="ghost" size="sm">
-            <User className="w-4 h-4 mr-1" />
-            Login
-          </Button>
-          <Button variant="hero" size="sm">
-            Start Playing
-          </Button>
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user.user_metadata?.avatar_url} />
+                    <AvatarFallback>
+                      {user.user_metadata?.full_name?.charAt(0) || user.email?.charAt(0) || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">
+                      {user.user_metadata?.full_name || 'Anonymous'}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {user.email}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => signOut()}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" onClick={() => setShowAuthDialog(true)}>
+                <User className="w-4 h-4 mr-1" />
+                Login
+              </Button>
+              <Button variant="hero" size="sm" onClick={() => setShowAuthDialog(true)}>
+                Start Playing
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -86,18 +133,41 @@ const Navbar = () => {
                 About
               </a>
               <div className="flex flex-col gap-2 pt-4 border-t border-border/50">
-                <Button variant="ghost" size="sm" className="justify-start">
-                  <User className="w-4 h-4 mr-2" />
-                  Login
-                </Button>
-                <Button variant="hero" size="sm">
-                  Start Playing
-                </Button>
+                {user ? (
+                  <>
+                    <div className="flex items-center gap-2 px-3 py-2 text-sm">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={user.user_metadata?.avatar_url} />
+                        <AvatarFallback>
+                          {user.user_metadata?.full_name?.charAt(0) || user.email?.charAt(0) || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium">
+                        {user.user_metadata?.full_name || 'Anonymous'}
+                      </span>
+                    </div>
+                    <Button variant="ghost" size="sm" className="justify-start" onClick={() => signOut()}>
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Logout
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button variant="ghost" size="sm" className="justify-start" onClick={() => setShowAuthDialog(true)}>
+                      <User className="w-4 h-4 mr-2" />
+                      Login
+                    </Button>
+                    <Button variant="hero" size="sm" onClick={() => setShowAuthDialog(true)}>
+                      Start Playing
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>
         )}
       </nav>
+      <AuthDialog open={showAuthDialog} onOpenChange={setShowAuthDialog} />
     </header>
   );
 };
